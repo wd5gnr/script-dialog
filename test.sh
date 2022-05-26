@@ -51,7 +51,7 @@ WINDOW_ICON=$(standardIconQuestion)
 WINDOW_ICON=$(standardIconInfo)
 messagebox "Nice to meet you, $NAME"
 
-fi
+
 ACTIVITY="Pretending to load..."
 {
   for ((i = 0 ; i <= 100 ; i+=5)); do
