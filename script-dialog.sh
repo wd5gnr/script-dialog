@@ -2,6 +2,21 @@
 #multi-ui scripting
 # shellcheck disable=SC2046
 
+# Updates by Al Williams May 2022
+# KDialog quoting for the progress bar was borked so that was fixed
+# Also, it was not clear why a shell inside a GUI was still using TUI
+# dialogs. Maybe a feature? Anyway, if you set
+# GUI=true
+# terminal=false
+# Before calling the script you can force that behavior
+# on the original
+# However, I made a change to where if DISPLAY is set
+# we assume terminal is false
+# you can still override if you like
+
+# NOTE: I have not tested all the support, just got kdialog working and the TUI
+# seems to work also. Proceed at your own risk!
+
 if [[ $OSTYPE == darwin* ]]; then
     desktop="macos"
 elif [[ "$(</proc/sys/kernel/osrelease)" == *microsoft* ]]; then
@@ -18,7 +33,14 @@ fi
 
 desktop=$(echo "$desktop" | tr '[:upper:]' '[:lower:]')  # convert to lower case
 
-[ -t 0 ] && terminal=true || terminal=false
+if [ -z "$terminal" ]
+   then
+       [ -t 0 ] && terminal=true || terminal=false
+       if [ ! -z "$DISPLAY" ]   # Use GUI if under X11
+       then
+	   terminal=false
+       fi
+    fi
 
 hasKDialog=false
 hasZenity=false
@@ -89,6 +111,8 @@ if [ -z ${INTERFACE+x} ]; then
     fi
   fi
 fi
+
+
 
 # which sudo to use
 NO_SUDO=false
@@ -584,7 +608,7 @@ function progressbar() {
     zenity --title "$GUI_TITLE" --window-icon "$WINDOW_ICON" --progress --text="$ACTIVITY" --auto-close --auto-kill --percentage 0
   elif [ "$INTERFACE" == "kdialog" ]; then
     dbusRef=$(kdialog --title "$GUI_TITLE" --icon "$WINDOW_ICON" --progressbar "$ACTIVITY" 100)
-    qdbus "$dbusRef" Set "" value 0
+    qdbus $dbusRef Set "" value 0
 
     mkdir -p /tmp/script-dialog.$$/
     DBUS_BAR_PATH=/tmp/script-dialog.$$/progressbar_dbus
@@ -596,7 +620,7 @@ function progressbar() {
 		read -r "$@" <&0;
 	done
 
-	qdbus "$dbusRef" close
+	qdbus $dbusRef close
   else
     echo -ne "\r$ACTIVITY 0%"
     cat
@@ -608,7 +632,7 @@ function progressbar_update() {
     DBUS_BAR_PATH=/tmp/script-dialog.$$/progressbar_dbus
 	if [ -e $DBUS_BAR_PATH ]; then
 		dbusRef=$(cat $DBUS_BAR_PATH)
-		qdbus "$dbusRef" Set "" value "$1"
+		qdbus $dbusRef Set "" value "$1"
 		sleep 0.2 # requires slight sleep
 	else
 		echo "Could not update progressbar $$"
@@ -624,7 +648,7 @@ function progressbar_update() {
 function progressbar_finish() {
   if [ "$INTERFACE" == "kdialog" ]; then
 	DBUS_BAR_FOLDER=/tmp/script-dialog.$$
-    DBUS_BAR_PATH=$DBUS_BAR_FOLDER/progressbar_dbus
+	DBUS_BAR_PATH=$DBUS_BAR_FOLDER/progressbar_dbus
     if [ -e $DBUS_BAR_PATH ]; then
 		rm $DBUS_BAR_PATH
 		rmdir $DBUS_BAR_FOLDER --ignore-fail-on-non-empty

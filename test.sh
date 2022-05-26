@@ -51,6 +51,7 @@ WINDOW_ICON=$(standardIconQuestion)
 WINDOW_ICON=$(standardIconInfo)
 messagebox "Nice to meet you, $NAME"
 
+fi
 ACTIVITY="Pretending to load..."
 {
   for ((i = 0 ; i <= 100 ; i+=5)); do
@@ -58,7 +59,8 @@ ACTIVITY="Pretending to load..."
     sleep 0.2
   done
   progressbar_finish
-} | progressbar "$@"
+}  | progressbar "$@"
+
 
 SUGGESTED_USERNAME=$(echo "$NAME" | tr '[:upper:]' '[:lower:]')  # convert to lower case
 
