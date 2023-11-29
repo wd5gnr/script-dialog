@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #multi-ui scripting
 # shellcheck disable=SC2046
 
